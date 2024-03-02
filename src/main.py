@@ -64,8 +64,10 @@ if __name__ == '__main__':
     ddi_adj_path = f'../data/{args.dataset}/output/ddi_A_final.pkl'
     ddi_mask_path = f'../data/{args.dataset}/output/ddi_mask_H.pkl'
     molecule_path = f'../data/{args.dataset}/input/idx2drug.pkl'
-    relevance_diag_med_path = f'../data/{args.dataset}/graphs/Diag_Med_relevance.pkl'
-    relevance_proc_med_path = f'../data/{args.dataset}/graphs/Proc_Med_relevance.pkl'
+    # relevance_diag_med_path = f'../data/{args.dataset}/graphs/Diag_Med_relevance.pkl'
+    # relevance_proc_med_path = f'../data/{args.dataset}/graphs/Proc_Med_relevance.pkl'
+    relevance_diag_med_path = f'../data/{args.dataset}/graphs/Diag_Med_causal_effect.pkl'
+    relevance_proc_med_path = f'../data/{args.dataset}/graphs/Proc_Med_causal_effect.pkl'
 
     with open(ddi_adj_path, 'rb') as Fin:
         ddi_adj = torch.from_numpy(dill.load(Fin)).to(device)
