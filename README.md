@@ -1,6 +1,6 @@
-# DGMed
+# CIDGMed
 
-The official version of `DGMed` includes the complete model architecture, training methods, and test examples.
+The official version of `CIDGMed` includes the complete model architecture, training methods, and test examples.
 
 ## 1. Folder Specification
 
