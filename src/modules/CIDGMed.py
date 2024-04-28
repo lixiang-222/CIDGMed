@@ -42,7 +42,7 @@ class CausaltyReview(nn.Module):
         return reviewed_prob
 
 
-class AlignMed(torch.nn.Module):
+class CIDGMed(torch.nn.Module):
     def __init__(
             self,
             causal_graph,
@@ -53,7 +53,7 @@ class AlignMed(torch.nn.Module):
             dropout,
             device=torch.device('cpu'),
     ):
-        super(AlignMed, self).__init__()
+        super(CIDGMed, self).__init__()
         self.device = device
         self.emb_dim = emb_dim
 

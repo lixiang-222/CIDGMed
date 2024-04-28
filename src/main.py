@@ -4,7 +4,7 @@ import dill
 import numpy as np
 import torch
 
-from modules.AlignMed import AlignMed
+from modules.CIDGMed import CIDGMed
 from modules.causal_construction_easyuse import CausaltyGraph4Visit
 # from modules.causal_construction import CausaltyGraph4Visit
 from training import Test, Train
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     causal_graph = CausaltyGraph4Visit(data, data_train, voc_size[0], voc_size[1], voc_size[2], args.dataset)
 
-    model = AlignMed(
+    model = CIDGMed(
         causal_graph=causal_graph,
         mole_relevance=mole_relevance,
         tensor_ddi_adj=ddi_adj,
