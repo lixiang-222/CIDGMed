@@ -78,5 +78,12 @@ python src/main.py
 
 ## 3. Citation & Acknowledgement
 
-As the article has not yet been published, we are unable to attach contact details. We remain grateful to every user/reviewer who provided input on the project and welcome your valuable comments.
-
+If the code and the paper are useful for you, it is appreciable to cite our paper:
+```bash
+@article{liang2024dual,
+  title={Dual-Granularity Medication Recommendation Based on Causal Inference},
+  author={Liang, Shunpan and Li, Xiang and Li, Chen and Lei, Yu and Hou, Yulei and Ma, Tengfei},
+  journal={arXiv preprint arXiv:2403.00880},
+  year={2024}
+}
+```
