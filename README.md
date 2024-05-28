@@ -77,6 +77,7 @@ python src/main.py
 ```
 
 ## 3. Citation & Acknowledgement
+We are grateful to everyone who contributed to this project.
 
 If the code and the paper are useful for you, it is appreciable to cite our paper:
 ```bash
