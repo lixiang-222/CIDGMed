@@ -40,7 +40,19 @@ The official version of `CIDGMed` includes the complete model architecture, trai
 
 ## 2. Operation
 
-## 2.1 Package Dependency
+## 2.1 Experimental Environment 
+
+The experimental environment used in this study is as follows:
+
+```bash 
+Operating system: Ubuntu 22.04
+CPU usage: The task was executed on a 12-core CPU, with a 64% utilization rate on a single core.
+Memory requirements: 3.4GB of memory was utilized out of 30GB available.
+GPU requirements: 24GB NVIDIA RTX3090 GPU.
+Environment dependencies: PyTorch 2.0.0 and CUDA 11.7.
+```
+        
+## 2.2 Package Dependency
 
 Please install the environment according to the following version
 
@@ -55,6 +67,7 @@ cdt == 0.6.0
 dowhy ==  0.10.1
 statsmodels == 0.14.0
 ```
+
 ## 2.2 Data Processing
 
 1.MIMIC-III:Due to the privacy of medical data, we cannot directly provide source data. You must apply for permission at https://physionet.org/content/mimiciii/1.4/ and download the data set after passing the review. And go into the folder and unzip three main files (PROCEDURES_ICD.csv.gz, PRESCRIPTIONS.csv.gz, DIAGNOSES_ICD.csv.gz) into /data/inputs/.
