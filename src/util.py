@@ -12,6 +12,8 @@ from sklearn.metrics import roc_auc_score, f1_score
 warnings.filterwarnings('ignore')
 
 dataset = 'mimic3'
+
+
 # dataset = 'mimic4'
 
 
@@ -153,6 +155,38 @@ def sequence_metric(y_gt, y_pred, y_prob, y_label):
 
 
 def multi_label_metric(y_gt, y_pred, y_prob):
+    def false_positives_and_negatives(y_gt, y_pred):
+        false_positives_rate = []
+        false_negatives_rate = []
+
+        for b in range(y_gt.shape[0]):
+            target = np.where(y_gt[b] == 1)[0]  # Actual positive set (ground truth positive)
+            out_list = np.where(y_pred[b] == 1)[0]  # Predicted positive set
+
+            # Actual negative set (ground truth negative)
+            actual_negatives = np.where(y_gt[b] == 0)[0]
+
+            # Calculate False Positives: Elements in predicted set but not in the actual set
+            fp = len(set(out_list) - set(target))
+            # Calculate False Negatives: Elements in actual set but not in the predicted set
+            fn = len(set(target) - set(out_list))
+
+            # Calculate True Positives and True Negatives
+            tp = len(set(out_list) & set(target))
+            tn = len(set(actual_negatives) - set(out_list))
+
+            # False Positive Rate: FP / (FP + TN)
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+
+            # False Negative Rate: FN / (FN + TP)
+            fnr = fn / (fn + tp) if (fn + tp) > 0 else 0
+
+            false_positives_rate.append(fpr)
+            false_negatives_rate.append(fnr)
+
+        # Return the average False Positive Rate and False Negative Rate
+        return np.mean(false_positives_rate), np.mean(false_negatives_rate)
+
     def jaccard(y_gt, y_pred):
         score = []
         for b in range(y_gt.shape[0]):
@@ -246,9 +280,11 @@ def multi_label_metric(y_gt, y_pred, y_prob):
     avg_prc = average_prc(y_gt, y_pred)
     avg_recall = average_recall(y_gt, y_pred)
     avg_f1 = average_f1(avg_prc, avg_recall)
+    # fp, fn
+    fp, fn = false_positives_and_negatives(y_gt, y_pred)
 
     # jaccard
-    return ja, prauc, np.mean(avg_prc), np.mean(avg_recall), np.mean(avg_f1)
+    return ja, prauc, np.mean(avg_prc), np.mean(avg_recall), np.mean(avg_f1), fp, fn
 
 
 def ddi_rate_score(record, path=f'../data/{dataset}/output/ddi_A_final.pkl'):

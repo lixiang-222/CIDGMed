@@ -19,7 +19,7 @@ def set_seed():
 def parse_args():
     parser = argparse.ArgumentParser()
     # mode
-    parser.add_argument("--debug", default=False,
+    parser.add_argument("--debug", default=True,
                         help="debug mode, the number of samples, "
                              "the number of generations run are very small, "
                              "designed to run on cpu, the development of the use of")
@@ -27,7 +27,7 @@ def parse_args():
 
     # environment
     parser.add_argument('--dataset', default='mimic3', help='mimic3/mimic4')
-    parser.add_argument('--resume_path', default="../saved/mimic3/trained_model_0.5573", type=str,
+    parser.add_argument('--resume_path', default="../saved/mimic3/trained_model_0.5546", type=str,
                         help='path of well trained model, only for evaluating the model, needs to be replaced manually')
     parser.add_argument('--device', type=int, default=0, help='gpu id to run on, negative for cpu')
 

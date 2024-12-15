@@ -70,12 +70,11 @@ statsmodels == 0.14.0
 
 ## 2.2 Data Processing
 
-1.MIMIC-III:Due to the privacy of medical data, we cannot directly provide source data. You must apply for permission at https://physionet.org/content/mimiciii/1.4/ and download the data set after passing the review. And go into the folder and unzip three main files (PROCEDURES_ICD.csv.gz, PRESCRIPTIONS.csv.gz, DIAGNOSES_ICD.csv.gz) into /data/inputs/.
+1.Since GitHub has a 100MB file size limit, we can only upload a portion of the data. To make reproduction more convenient, we have provided a compressed file containing all the data for download on Google Drive.
 
+https://drive.google.com/file/d/1B_IniWXZvwsN2tjEcLuRm927C8peDFJD/view?usp=sharing
 
-2.Known DDI:download the DDI file and move it to the data folder download https://drive.google.com/file/d/1mnPc0O0ztz0fkv3HF-dpmBb8PLWsEoDz/view?usp=sharing
-
-3.processing the data to get a complete records
+2.Readers can directly use the data we provide or regenerate the data using the code below.
 
 ```bash
 python data/processing.py
@@ -94,10 +93,14 @@ We are grateful to everyone who contributed to this project.
 
 If the code and the paper are useful for you, it is appreciable to cite our paper:
 ```bash
-@article{liang2024dual,
-  title={Dual-Granularity Medication Recommendation Based on Causal Inference},
-  author={Liang, Shunpan and Li, Xiang and Li, Chen and Lei, Yu and Hou, Yulei and Ma, Tengfei},
-  journal={arXiv preprint arXiv:2403.00880},
-  year={2024}
+@article{liang2025cidgmed,
+  title={CIDGMed: Causal Inference-Driven Medication Recommendation with Enhanced Dual-Granularity Learning},
+  author={Liang, Shunpan and Li, Xiang and Mu, Shi and Li, Chen and Lei, Yu and Hou, Yulei and Ma, Tengfei},
+  journal={Knowledge-Based Systems},
+  volume={309},
+  pages={112685},
+  year={2025},
+  publisher={Elsevier}
 }
+
 ```

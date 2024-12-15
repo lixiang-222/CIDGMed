@@ -14,7 +14,7 @@ from util import llprint, multi_label_metric, ddi_rate_score, get_n_params, para
 
 def eval_one_epoch(model, data_eval, voc_size):
     model = model.eval()
-    smm_record, ja, prauc, avg_p, avg_r, avg_f1 = [[] for _ in range(6)]
+    smm_record, ja, prauc, avg_p, avg_r, avg_f1, avg_fp, avg_fn = [[] for _ in range(8)]
     med_cnt, visit_cnt = 0, 0
     for step, input_seq in enumerate(data_eval):
         y_gt, y_pred, y_pred_prob, y_pred_label = [], [], [], []
@@ -38,7 +38,7 @@ def eval_one_epoch(model, data_eval, voc_size):
             visit_cnt += 1
             med_cnt += len(y_pred_label_tmp)
         smm_record.append(y_pred_label)
-        adm_ja, adm_prauc, adm_avg_p, adm_avg_r, adm_avg_f1 = multi_label_metric(
+        adm_ja, adm_prauc, adm_avg_p, adm_avg_r, adm_avg_f1, fp, fn = multi_label_metric(
             np.array(y_gt), np.array(y_pred), np.array(y_pred_prob)
         )
         ja.append(adm_ja)
@@ -46,17 +46,22 @@ def eval_one_epoch(model, data_eval, voc_size):
         avg_p.append(adm_avg_p)
         avg_r.append(adm_avg_r)
         avg_f1.append(adm_avg_f1)
+
+        avg_fn.append(fn)
+        avg_fp.append(fp)
+
         llprint('\rtest step: {} / {}'.format(step + 1, len(data_eval)))
 
     ddi_rate = ddi_rate_score(smm_record)
     output_str = '\nDDI Rate: {:.4f}, Jaccard: {:.4f}, PRAUC: {:.4f}, ' + \
-                 'AVG_PRC: {:.4f}, AVG_RECALL: {:.4f}, AVG_F1: {:.4f}, AVG_MED: {:.4f}\n'
+                 'AVG_PRC: {:.4f}, AVG_RECALL: {:.4f}, AVG_F1: {:.4f}, AVG_MED: {:.4f}, ' + \
+                 'AVG_FP: {:.4f}, AVG_FN: {:.4f}\n'
     llprint(output_str.format(
         ddi_rate, np.mean(ja), np.mean(prauc), np.mean(avg_p),
-        np.mean(avg_r), np.mean(avg_f1), med_cnt / visit_cnt
+        np.mean(avg_r), np.mean(avg_f1), med_cnt / visit_cnt, np.mean(avg_fp), np.mean(avg_fn)
     ))
     return ddi_rate, np.mean(ja), np.mean(prauc), np.mean(avg_p), \
-        np.mean(avg_r), np.mean(avg_f1), med_cnt / visit_cnt
+        np.mean(avg_r), np.mean(avg_f1), med_cnt / visit_cnt, np.mean(avg_fp), np.mean(avg_fn)
 
 
 def Test(model, device, data_test, voc_size):
@@ -69,11 +74,12 @@ def Test(model, device, data_test, voc_size):
         selected_indices = np.random.choice(len(data_test), size=round(len(data_test) * 0.8), replace=True)
         selected_indices_list = selected_indices.tolist()
         test_sample = [data_test[i] for i in selected_indices_list]
-        ddi_rate, ja, prauc, avg_p, avg_r, avg_f1, avg_med = eval_one_epoch(model, test_sample, voc_size)
-        result.append([ja, ddi_rate, avg_f1, prauc, avg_med])
+        ddi_rate, ja, prauc, avg_p, avg_r, avg_f1, avg_med, avg_fp, avg_fn \
+            = eval_one_epoch(model, test_sample, voc_size)
+        result.append([ja, ddi_rate, avg_f1, prauc, avg_med, avg_fp, avg_fn])
     result = np.array(result)
     mean, std = result.mean(axis=0), result.std(axis=0)
-    metric_list = ['ja', 'ddi_rate', 'avg_f1', 'prauc', 'med']
+    metric_list = ['ja', 'ddi_rate', 'avg_f1', 'prauc', 'med', 'avg_fp', 'avg_fn']
     outstring = ''.join([
         "{}:\t{:.4f} $\\pm$ {:.4f} & \n".format(metric_list[idx], m, s)
         for idx, (m, s) in enumerate(zip(mean, std))
@@ -141,7 +147,7 @@ def Train(model, device, data_train, data_eval, voc_size, args):
         print(f'\nddi_loss : {ddi_losses[-1]}\n')
         train_time, tic = time.time() - tic, time.time()
         total_train_time += train_time
-        ddi_rate, ja, prauc, avg_p, avg_r, avg_f1, avg_med = eval_one_epoch(model, data_eval, voc_size)
+        ddi_rate, ja, prauc, avg_p, avg_r, avg_f1, avg_med, avg_fp, avg_fn = eval_one_epoch(model, data_eval, voc_size)
         print(f'training time: {train_time}, testing time: {time.time() - tic}')
         ddi_values.append(ddi_rate)
         history['ja'].append(ja)

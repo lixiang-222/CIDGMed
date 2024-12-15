@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch_geometric.data import Data
+from torch_geometric.nn import GINConv
 
 from .hetero_effect_graph import hetero_effect_graph
 from .homo_relation_graph import homo_relation_graph
@@ -42,6 +44,35 @@ class CausaltyReview(nn.Module):
         return reviewed_prob
 
 
+class GIN(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dim):
+        super(GIN, self).__init__()
+        # 定义一个两层的MLP（多层感知机）作为GIN中的聚合函数
+        nn = torch.nn.Sequential(
+            torch.nn.Linear(input_dim, hidden_dim),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_dim, hidden_dim)
+        )
+        # 使用GINConv来定义GIN层
+        self.conv = GINConv(nn)
+
+    def forward(self, x, edge_index, weights):
+        # 应用GIN层
+        x = self.conv(x, edge_index)
+
+        # 确保weights的形状与x匹配
+        weights = weights.unsqueeze(dim=-1)
+
+        # 使用weights对每个节点嵌入进行加权
+        x = x * weights
+
+        # 对所有节点嵌入进行加和
+        x_sum = x.sum(dim=0)
+        x_sum = x_sum.unsqueeze(dim=0).unsqueeze(dim=0)
+
+        return x_sum
+
+
 class CIDGMed(torch.nn.Module):
     def __init__(
             self,
@@ -74,7 +105,11 @@ class CIDGMed(torch.nn.Module):
 
         self.mole_relevance = mole_relevance
 
-        self.mole_med_relevance = nn.Parameter(torch.tensor(mole_relevance[2], dtype=torch.float))
+        # 这里只是分子与药物的相关性
+        self.mole_med_relevance = torch.tensor(mole_relevance[2])
+        self.mole_med_weights = nn.Parameter(torch.ones(mole_relevance[2].shape[1]))
+
+        self.gin_model = GIN(emb_dim, emb_dim)
 
         self.homo_graph = nn.ModuleList([
             homo_relation_graph(emb_dim, device),
@@ -114,23 +149,60 @@ class CIDGMed(torch.nn.Module):
         for item in self.embeddings:
             item.weight.data.uniform_(-initrange, initrange)
 
-    def med_embedding(self, idx, emb_mole):
-        # 获取所有的相关性
-        relevance = self.mole_med_relevance[idx, :].to(self.device)
+    def create_graph_data(self, molecule_embeddings):
+        num_molecules = len(molecule_embeddings)
 
-        # 创建一个掩码，标识非零元素的位置
-        mask = relevance != 0
+        # 构建全连接图的边索引
+        source = []
+        target = []
+        for i in range(num_molecules):
+            for j in range(num_molecules):
+                if i != j:  # 排除自环
+                    source.append(i)
+                    target.append(j)
 
-        # 将零元素设置为一个很小的负数（-inf），以便在softmax中保持其值为零
-        relevance_masked = relevance.masked_fill(~mask, -float('inf'))
+        edge_index = torch.tensor([source, target], dtype=torch.long)
 
-        # 对掩码后的relevance的每一行使用softmax进行归一化
-        relevance_normalized = F.softmax(relevance_masked, dim=1)
+        # 将分子的嵌入向量堆叠起来，作为图的节点特征
+        # x = torch.stack(molecule_embeddings)
 
-        # 使用广播和批量矩阵乘法计算嵌入
-        emb_med1 = torch.matmul(relevance_normalized, emb_mole.squeeze(0))
+        # 创建图数据对象
+        data = Data(x=molecule_embeddings, edge_index=edge_index)
 
-        return emb_med1.unsqueeze(0)
+        return data
+
+    def med_embedding(self, idx_list, emb_mole):
+        emb_mole = emb_mole.squeeze(0)
+        # 存储所有药物的嵌入表示
+        all_drug_embeddings = []
+
+        # 遍历所有药物的索引
+        for idx in idx_list:
+            # 获取药物与所有分子之间的相关性
+            relevance = self.mole_med_relevance[idx, :].to(self.device)
+            # 创建一个掩码，标识非零元素的位置
+            mask = relevance != 0
+            # 将零元素设置为负无穷大，以便在softmax中保持其值为零
+            relevance_masked = relevance.masked_fill(~mask, -float('inf'))
+            # 对掩码后的relevance使用softmax进行归一化
+            relevance_normalized = F.softmax(relevance_masked, dim=0)
+
+            # 找到每个药物与之相关的分子的位置
+            relevant_molecule_indices = torch.nonzero(relevance_normalized, as_tuple=True)[0]
+            relevant_molecule_embeddings = emb_mole[relevant_molecule_indices]
+            weights = self.mole_med_weights[relevant_molecule_indices]
+            weights_normalized = F.softmax(weights, dim=0)
+
+            # 使用GIN构建分子图网络并获取药物表示
+            graph_data = self.create_graph_data(relevant_molecule_embeddings)
+
+            # 使用GIN模型得到药物的嵌入表示
+            drug_embedding = self.gin_model(graph_data.x.to(self.device), graph_data.edge_index.to(self.device), weights_normalized)
+            all_drug_embeddings.append(drug_embedding)
+
+        # 将所有药物的嵌入表示按顺序堆叠在一起
+        all_drug_embeddings = torch.cat(all_drug_embeddings, dim=1)
+        return all_drug_embeddings
 
     def forward(self, patient_data):
         seq_diag, seq_proc, seq_med = [], [], []
